@@ -37,28 +37,35 @@ app.post("/api/tasks", async function(req, res) {
 });
 
 app.post("/api/chat", async function(req, res) {
-    const userMessage = req.body.message;
+    try {
+        const userMessage = req.body.message;
 
-    const response = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + process.env.GEMINI_API_KEY,
-        {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: "You are a helpful assistant for Mahaluxmi Shoe and Fancy Store, which sells shoes, slippers, bangles, cosmetics, and stoles/jewelry in Nagaur, Rajasthan. Store hours are Mon-Sat, 10 AM - 8 PM. Answer customer questions helpfully and briefly. Customer question: " + userMessage
+        const response = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + process.env.GEMINI_API_KEY,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: "You are a helpful assistant for Mahaluxmi Shoe and Fancy Store, which sells shoes, slippers, bangles, cosmetics, and stoles/jewelry in Nagaur, Rajasthan. Store hours are Mon-Sat, 10 AM - 8 PM. Answer customer questions helpfully and briefly. Customer question: " + userMessage
+                        }]
                     }]
-                }]
-            })
+                })
+            }
+        );
+
+        const data = await response.json();
+        console.log("Gemini response:", JSON.stringify(data));
+
+        if (data.error) {
+            return res.status(500).json({ error: data.error.message });
         }
-    );
 
-    const data = await response.json();
-    const reply = data.candidates[0].content.parts[0].text;
-    res.json({ reply: reply });
-});
-
-app.listen(PORT, function() {
-    console.log("Server running at http://localhost:" + PORT);
+        const reply = data.candidates[0].content.parts[0].text;
+        res.json({ reply: reply });
+    } catch (err) {
+        console.log("Chat route error:", err.message);
+        res.status(500).json({ error: err.message });
+    }
 });
